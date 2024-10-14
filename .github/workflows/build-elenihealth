@@ -1,0 +1,57 @@
+name: Build ESP32_S3_ELERNIHEALTH
+
+on:
+  workflow_dispatch
+
+jobs:
+  build_ORGPAL_RADAR:
+    runs-on: windows-latest
+
+    env:
+      TARGET_NAME: 'ESP32_S3_ELERNIHEALTH'
+
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+        ref: 'EleniHealth'
+  
+    - uses: lukka/get-cmake@latest
+
+    - name: Set version
+      run: nbgv cloud -a -c
+
+    - name: Rename CMake presets
+      working-directory: ${{ github.workspace }}/config
+      run: |
+        $file = "user-tools-repos.json"
+        Rename-Item -Path "user-tools-repos.TEMPLATE.json" -NewName $file
+        [regex]$pattern='user-tools-repos-cloud'
+        $pattern.replace([IO.File]::ReadAllText($file), 'user-tools-repos', 1) | Out-File $file -Encoding UTF8
+        
+        $file = "user-prefs.json"
+        Rename-Item -Path "user-prefs.TEMPLATE.json" -NewName $file
+        
+        $filecontent = Get-Content($file)
+        attrib $file -r
+        $filecontent -replace  'Debug', 'MinSizeRel' | Out-File $file -Encoding UTF8
+
+    - name: Add dummy CMake presets
+      working-directory: ${{ github.workspace }}/targets-community
+      run: |
+        New-Item -Path . -Name "CMakePresets.json" -ItemType "file" -Value "{`n""version"": 4,`n""include"": []`n}"
+
+    - uses: lukka/run-cmake@v10
+      with:
+        configurePreset: ${{ env.TARGET_NAME }}
+        configurePresetAdditionalArgs: "['-DBUILD_VERSION=${{env.NBGV_VersionMajor}}.${{env.NBGV_VersionMinor}}.${{env.NBGV_BuildNumber}}.${{env.NBGV_VersionHeight}}','-DCMAKE_BUILD_TYPE=MinSizeRel']"
+        buildPreset: ${{ env.TARGET_NAME }}
+        buildPresetAdditionalArgs: "['--config MinSizeRel']"
+
+    - uses: actions/upload-artifact@v4
+      with:
+        name: '${{ env.TARGET_NAME }}-v${{env.NBGV_VersionMajor}}.${{env.NBGV_VersionMinor}}.${{env.NBGV_BuildNumber}}.${{env.NBGV_VersionHeight}}'
+        path: |
+          ${{ github.workspace }}/build/*.bin
+          ${{ github.workspace }}/build/*.hex
+          ${{ github.workspace }}/build/*.dfu
