@@ -5,7 +5,7 @@
 #define BYTES_PER_READING     3
 #define STATUS_BYTES_COUNT    3
 #define CHANNEL_1_DATA_OFFSET 3
-#define NUMBER_OF_CHANNELS    8
+#define NUMBER_OF_CHANNELS    4
 
 typedef Library_sys_dev_spi_native_System_Device_Spi_SpiConnectionSettings SpiConnectionSettings;
 typedef Library_sys_dev_spi_native_System_Device_Spi_SpiDevice SpiDevice;
