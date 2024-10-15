@@ -9,6 +9,7 @@ jobs:
 
     env:
       TARGET_NAME: 'ESP32_S3_ELENIHEALTH'
+      IDF_Target: 'esp32s3'
 
     steps:
     - uses: actions/checkout@v4
@@ -43,7 +44,7 @@ jobs:
     - name: Install IDF (step 1)
       shell: pwsh
       run: |
-        ${{env.IDF_PATH}}/install.ps1 -targets esp32s3
+        ${{env.IDF_PATH}}/install.ps1
       working-directory: ${{ env.IDF_PATH }}
 
     - name: Install IDF (step 2)
@@ -115,7 +116,7 @@ jobs:
         buildPresetAdditionalArgs: "['--config MinSizeRel']"
 
     - name: Generate ESP32 Partition tables
-      run: python ${{env.IDF_PATH}}/components/partition_table/gen_esp32part.py --verify partitions_nanoclr_8mb.csv build/partitions_8mb.bin
+      run: python ${{env.IDF_PATH}}/components/partition_table/gen_esp32part.py --verify ${{ github.workspace }}/targets/ESP32/_IDF/${{ env.IDF_Target }}/partitions_nanoclr_8mb.csv ${{ github.workspace }}/build/partitions_8mb.bin
 
     - uses: actions/upload-artifact@v4
       with:
@@ -124,3 +125,4 @@ jobs:
           ${{ github.workspace }}/build/*.bin
           ${{ github.workspace }}/build/*.hex
           ${{ github.workspace }}/build/*.dfu
+          ${{ github.workspace }}/build/*.csv
