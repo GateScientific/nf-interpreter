@@ -55,7 +55,12 @@ HRESULT Library_gatescientific_ads1299_GateScientific_Ads1299_Ads1299::
 {
     NANOCLR_HEADER();
 
-    NANOCLR_SET_AND_LEAVE(stack.NotImplementedStub());
+    // get a pointer to the managed object instance and check that it's not NULL
+    CLR_RT_HeapBlock *pThis = stack.This();
+    FAULT_ON_NULL(pThis);
+
+    // release the DRDY pin
+    CPU_GPIO_ReservePin(dataReadyPin, false);
 
     NANOCLR_NOCLEANUP();
 }
