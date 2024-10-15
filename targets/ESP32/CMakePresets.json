@@ -408,7 +408,7 @@
                 "NF_FEATURE_RTC": "ON",
                 "NF_INTEROP_ASSEMBLIES": "EleniHealth.Firmware.Native",
                 "ESP32_USB_CDC": "ON",
-                "API_nanoFramework.Device.Bluetooth": "ON",
+                "API_nanoFramework.Device.Bluetooth": "OFF",
                 "ESP32_SPIRAM_FOR_IDF_ALLOCATION": "256 * 1024"
             }
         },
