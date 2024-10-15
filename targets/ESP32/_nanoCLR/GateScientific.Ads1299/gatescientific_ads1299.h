@@ -32,16 +32,17 @@ struct Library_gatescientific_ads1299_GateScientific_Ads1299_Ads1299
     static const int FIELD_STATIC___sampleRates = 0;
 
     static const int FIELD__SpiCsPinNumber = 1;
-    static const int FIELD__SpiCsPin = 2;
-    static const int FIELD__StartPin = 3;
-    static const int FIELD__AdcOn = 4;
-    static const int FIELD___disposedValue = 5;
-    static const int FIELD___spiDevice = 6;
-    static const int FIELD___outputDataRate = 7;
+    static const int FIELD__DataReadyPinNumber = 2;
+    static const int FIELD__SpiCsPin = 3;
+    static const int FIELD__StartPin = 4;
+    static const int FIELD__AdcOn = 5;
+    static const int FIELD___disposedValue = 6;
+    static const int FIELD___spiDevice = 7;
+    static const int FIELD___outputDataRate = 8;
 
     NANOCLR_NATIVE_DECLARE(NativeInit___VOID);
     NANOCLR_NATIVE_DECLARE(NativeDeInit___VOID);
-    NANOCLR_NATIVE_DECLARE(NativeRecordEmg___SZARRAY_U1__SZARRAY_U1);
+    NANOCLR_NATIVE_DECLARE(NativeRecordEmg___VOID__SZARRAY_U1__SystemTimeSpan);
 
     //--//
 };
