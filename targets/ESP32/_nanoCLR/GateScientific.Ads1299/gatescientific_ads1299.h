@@ -27,6 +27,12 @@ typedef enum __nfpack Register
     Register_Config1 = 1,
 } Register;
 
+typedef struct
+{
+    uint8_t *Buffer;
+    uint16_t ReadingsToComplete;
+} NF_GS_EMGDATA;
+
 struct Library_gatescientific_ads1299_GateScientific_Ads1299_Ads1299
 {
     static const int FIELD_STATIC___sampleRates = 0;
