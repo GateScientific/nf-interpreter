@@ -409,6 +409,7 @@
                 "NF_INTEROP_ASSEMBLIES": "EleniHealth.Firmware.Native",
                 "ESP32_USB_CDC": "ON",
                 "API_nanoFramework.Device.Bluetooth": "OFF",
+                "API_GateScientific.Ads1299": "ON",
                 "ESP32_SPIRAM_FOR_IDF_ALLOCATION": "256 * 1024"
             }
         },

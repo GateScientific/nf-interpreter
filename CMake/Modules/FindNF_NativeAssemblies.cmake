@@ -54,7 +54,7 @@ option(API_Hardware.GiantGecko                          "option for Hardware.Gia
 
 ###################################
 # add options for private APIs here
-
+option(API_GateScientific.Ads1299                       "option for API_GateScientific.Ads1299")
 ###################################
 
 ###################################
@@ -464,6 +464,11 @@ ParseInteropAssemblies()
 
 ##################################
 # add parsing of private APIs here
+# GateScientific.Ads1299
+if(API_GateScientific.Ads1299)
+    ##### API name here (doted name)
+    PerformSettingsForApiEntry("GateScientific.Ads1299")
+endif()
 
 ##################################
 
