@@ -15,6 +15,8 @@ static const CLR_RT_MethodHandler method_lookup[] =
     NULL,
     NULL,
     NULL,
+    NULL,
+    NULL,
     Library_gatescientific_ads1299_GateScientific_Ads1299_Ads1299::NativeInit___VOID,
     Library_gatescientific_ads1299_GateScientific_Ads1299_Ads1299::NativeDeInit___VOID,
     Library_gatescientific_ads1299_GateScientific_Ads1299_Ads1299::NativeRecordEmg___VOID__SZARRAY_U1__SystemTimeSpan,
