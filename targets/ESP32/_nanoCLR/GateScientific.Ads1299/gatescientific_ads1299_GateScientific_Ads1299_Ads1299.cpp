@@ -12,8 +12,6 @@ HRESULT Library_gatescientific_ads1299_GateScientific_Ads1299_Ads1299::NativeIni
 {
     NANOCLR_HEADER();
 
-    //uint32_t handle = -1;
-
     CLR_RT_HeapBlock *spiDevice;
 
     // get a pointer to the managed object instance and check that it's not NULL
@@ -26,6 +24,19 @@ HRESULT Library_gatescientific_ads1299_GateScientific_Ads1299_Ads1299::NativeIni
     // get the SPI device handle
     spiDeviceHandle = spiDevice[SpiDevice::FIELD___deviceId].NumericByRef().s4;
 
+    // get the CS pin number
+    csPin = (GPIO_PIN)pThis[FIELD__SpiCsPinNumber].NumericByRef().s4;
+
+    // get the DRDY pin
+    dataReadyPin = (GPIO_PIN)pThis[FIELD__DataReadyPinNumber].NumericByRef().s4;
+
+    // setup the DRDY pin
+    if (!CPU_GPIO_ReservePin(dataReadyPin, true))
+    {
+        NANOCLR_SET_AND_LEAVE(CLR_E_INVALID_PARAMETER);
+    }
+
+    CPU_GPIO_EnableInputPin(dataReadyPin, 0, DataReadyHandler, NULL, GPIO_INT_LEVEL_LOW, PinMode_Input);
 
     NANOCLR_NOCLEANUP();
 }
