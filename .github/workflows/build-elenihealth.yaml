@@ -123,6 +123,6 @@ jobs:
         name: '${{ env.TARGET_NAME }}-v${{env.NBGV_VersionMajor}}.${{env.NBGV_VersionMinor}}.${{env.NBGV_BuildNumber}}.${{env.NBGV_VersionHeight}}'
         path: |
           ${{ github.workspace }}/build/*.bin
-          ${{ github.workspace }}/build/*.hex
+          ${{ github.workspace }}/build/bootloader/*.bin
           ${{ github.workspace }}/build/*.dfu
           ${{ github.workspace }}/build/*.csv
