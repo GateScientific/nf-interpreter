@@ -50,8 +50,8 @@ HRESULT Library_gatescientific_ads1299_GateScientific_Ads1299_Ads1299::NativeDeI
     NANOCLR_NOCLEANUP();
 }
 
-HRESULT Library_gatescientific_ads1299_GateScientific_Ads1299_Ads1299::NativeRecordEmg___SZARRAY_U1__SZARRAY_U1(
-    CLR_RT_StackFrame &stack)
+HRESULT Library_gatescientific_ads1299_GateScientific_Ads1299_Ads1299::
+    NativeRecordEmg___VOID__SZARRAY_U1__SystemTimeSpan(CLR_RT_StackFrame &stack)
 {
     NANOCLR_HEADER();
 
