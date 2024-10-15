@@ -35,16 +35,16 @@ jobs:
     - uses: lukka/get-cmake@latest
 
     - name: Cache ESP32 tools
-      uses: actions/cache@v3
+      uses: actions/cache@v4
       with:
-        path: 'C:/Users/runneradmin/.espressif/tools'
+        path: '${{ env.USERPROFILE }}/.espressif/tools'
         key: esp32_tools | 5_2_2
         restore-keys: 5_2_2
 
     - name: Cache pip packages
-      uses: actions/cache@v3
+      uses: actions/cache@v4
       with:
-        path: ${{ runner.workspace }}/.pip
+        path: '${{ env.USERPROFILE }}/appdata/local/pip'
         key: python | ${{ runner.os }} | ${{ env.IDF_PATH }}/tools/requirements/requirements.core.txt
         restore-keys: python | ${{ runner.os }} | ${{ env.IDF_PATH }}/tools/requirements/requirements.core.txt
 
@@ -91,7 +91,7 @@ jobs:
 
         # go through the output and grab what has to be appended to the PATH
         # need to remove the entry for IDF CMake because it's using an older version of CMake, OK to remove after they update it to >3.24.0
-        $newPath = $envars_raw[$pathElement].ToString().Replace('PATH=', '').Replace(';%PATH%', '').Replace('C:/Users/runneradmin/.espressif/tools/cmake/3.24.0/bin;', '')
+        $newPath = $envars_raw[$pathElement].ToString().Replace('PATH=', '').Replace(';%PATH%', '').Replace('${{ env.USERPROFILE }}/.espressif/tools/cmake/3.24.0/bin;', '')
 
         # append to path
         $env:Path += ";$newPath"
