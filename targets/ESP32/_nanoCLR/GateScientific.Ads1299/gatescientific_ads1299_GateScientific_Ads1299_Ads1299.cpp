@@ -161,9 +161,6 @@ HRESULT Library_gatescientific_ads1299_GateScientific_Ads1299_Ads1299::
 
         nanoSPI_Write_Read(spiDeviceHandle, spiWrSettings, (uint8_t *)&workBuffer, 1, NULL, 0);
 
-        // de-assert CS
-        // CPU_GPIO_SetPinState(csPin, GpioPinValue_High);
-
         // bump custom state
         stack.m_customState = 2;
     }
