@@ -30,7 +30,7 @@ typedef enum __nfpack Register
 typedef struct
 {
     uint8_t *Buffer;
-    uint16_t ReadingsToComplete;
+    int32_t ReadingsToComplete;
 } NF_GS_EMGDATA;
 
 struct Library_gatescientific_ads1299_GateScientific_Ads1299_Ads1299
@@ -48,7 +48,7 @@ struct Library_gatescientific_ads1299_GateScientific_Ads1299_Ads1299
 
     NANOCLR_NATIVE_DECLARE(NativeInit___VOID);
     NANOCLR_NATIVE_DECLARE(NativeDeInit___VOID);
-    NANOCLR_NATIVE_DECLARE(NativeRecordEmg___VOID__SZARRAY_U1__SystemTimeSpan);
+    NANOCLR_NATIVE_DECLARE(NativeRecordEmg___VOID__SZARRAY_U1__I4__SystemTimeSpan);
 
     //--//
 };
