@@ -25,6 +25,8 @@ static SPI_WRITE_READ_SETTINGS spiWrSettings = {
 void DataReadyHandler(GPIO_PIN pinNumber, bool pinState, void *pArg)
 {
     (void)pArg;
+    (void)pinNumber;
+    (void)pinState;
 
     // buffer to hold:
     // - 3 bytes for the status data
@@ -60,10 +62,10 @@ void DataReadyHandler(GPIO_PIN pinNumber, bool pinState, void *pArg)
 
         // signal the event
 
-        /////////////////////////////////////////////////
-        // HIJACKING the ONEWIRE_MASTER for this event //
-        /////////////////////////////////////////////////
-        Events_Set(SYSTEM_EVENT_FLAG_ONEWIRE_MASTER);
+        /////////////////////////////////////////////
+        // HIJACKING the FLAG_RADIO for this event //
+        /////////////////////////////////////////////
+        Events_Set(SYSTEM_EVENT_FLAG_RADIO);
     }
 }
 
@@ -169,26 +171,17 @@ HRESULT Library_gatescientific_ads1299_GateScientific_Ads1299_Ads1299::
     while (eventResult)
     {
         // non-blocking wait allowing other threads to run while we wait for the read operation to complete
-        /////////////////////////////////////////////////
-        // HIJACKING the ONEWIRE_MASTER for this event //
-        /////////////////////////////////////////////////
+        
+        /////////////////////////////////////////////
+        // HIJACKING the FLAG_RADIO for this event //
+        /////////////////////////////////////////////
         NANOCLR_CHECK_HRESULT(
             g_CLR_RT_ExecutionEngine.WaitEvents(stack.m_owningThread, *timeoutTicks, Event_Radio, eventResult));
 
         if (eventResult)
         {
-            // sanity check for not enough data read
-            if (emgData.ReadingsToComplete > 0)
-            {
-                // not enough data read
-                // return exception
-                NANOCLR_SET_AND_LEAVE(CLR_E_IO);
-            }
-            else
-            {
-                // done here
-                break;
-            }
+            // done here
+            break;
         }
         else
         {
