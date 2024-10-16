@@ -49,6 +49,15 @@ void DataReadyHandler(GPIO_PIN pinNumber, bool pinState, void *pArg)
     if (emgData.ReadingsToComplete == 0)
     {
         // all readings have been completed
+
+        // no matter the result, send the command to Stop Read Data Continuously mode
+        uint8_t workBuffer = 0b00010001;
+
+        nanoSPI_Write_Read(spiDeviceHandle, spiWrSettings, (uint8_t *)&workBuffer, 1, NULL, 0);
+
+        // de-assert CS
+        CPU_GPIO_SetPinState(csPin, GpioPinValue_High);
+
         // signal the event
 
         /////////////////////////////////////////////////
@@ -151,7 +160,7 @@ HRESULT Library_gatescientific_ads1299_GateScientific_Ads1299_Ads1299::
         nanoSPI_Write_Read(spiDeviceHandle, spiWrSettings, (uint8_t *)&workBuffer, 1, NULL, 0);
 
         // de-assert CS
-        CPU_GPIO_SetPinState(csPin, GpioPinValue_High);
+        // CPU_GPIO_SetPinState(csPin, GpioPinValue_High);
 
         // bump custom state
         stack.m_customState = 2;
@@ -164,16 +173,7 @@ HRESULT Library_gatescientific_ads1299_GateScientific_Ads1299_Ads1299::
         // HIJACKING the ONEWIRE_MASTER for this event //
         /////////////////////////////////////////////////
         NANOCLR_CHECK_HRESULT(
-            g_CLR_RT_ExecutionEngine.WaitEvents(stack.m_owningThread, *timeoutTicks, Event_OneWireHost, eventResult));
-
-        // no matter the result, send the command to Stop Read Data Continuously mode
-        workBuffer = 0b00010001;
-
-        // no need to assert CS as it's already asserted
-        nanoSPI_Write_Read(spiDeviceHandle, spiWrSettings, (uint8_t *)&workBuffer, 1, NULL, 0);
-
-        // de-assert CS
-        CPU_GPIO_SetPinState(csPin, GpioPinValue_High);
+            g_CLR_RT_ExecutionEngine.WaitEvents(stack.m_owningThread, *timeoutTicks, Event_Radio, eventResult));
 
         if (eventResult)
         {
