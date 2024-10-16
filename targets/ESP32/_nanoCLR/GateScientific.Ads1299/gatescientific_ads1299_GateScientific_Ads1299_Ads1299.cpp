@@ -198,5 +198,8 @@ HRESULT Library_gatescientific_ads1299_GateScientific_Ads1299_Ads1299::
         }
     }
 
+    // pop timeout heap block from stack
+    stack.PopValue();
+
     NANOCLR_NOCLEANUP();
 }
