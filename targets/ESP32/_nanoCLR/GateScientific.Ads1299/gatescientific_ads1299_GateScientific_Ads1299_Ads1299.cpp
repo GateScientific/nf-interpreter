@@ -22,50 +22,57 @@ static SPI_WRITE_READ_SETTINGS spiWrSettings = {
     .DeviceChipSelect = -1,
     .ChipSelectActiveState = false};
 
+// buffer to hold:
+// - 3 bytes for the status data
+// - 3 bytes for each channel data
+static uint8_t readBuffer[STATUS_BYTES_COUNT + NUMBER_OF_CHANNELS * BYTES_PER_READING];
+
 void DataReadyHandler(GPIO_PIN pinNumber, bool pinState, void *pArg)
 {
     (void)pArg;
     (void)pinNumber;
     (void)pinState;
 
-    // buffer to hold:
-    // - 3 bytes for the status data
-    // - 3 bytes for each channel data
-    uint8_t readBuffer[STATUS_BYTES_COUNT + NUMBER_OF_CHANNELS * BYTES_PER_READING];
-
-    // read the data
-    nanoSPI_Write_Read(spiDeviceHandle, spiWrSettings, NULL, 0, (uint8_t *)&readBuffer, sizeof(readBuffer));
-
-    // copy to the managed buffer:
-    // - dropping the status data
-    // - copying only channel 1 data
-    memcpy(emgData.Buffer, &readBuffer[CHANNEL_1_DATA_OFFSET], BYTES_PER_READING);
-
-    // decrement the number of readings to complete
-    emgData.ReadingsToComplete--;
-
-    // move pointer to next position
-    emgData.Buffer += BYTES_PER_READING;
-
-    // check if all readings have been completed
-    if (emgData.ReadingsToComplete == 0)
+    // check if we're still waiting for data or if the operation is complete
+    if (emgData.ReadingsToComplete > 0)
     {
-        // all readings have been completed
+        // read the data
+        nanoSPI_Write_Read(spiDeviceHandle, spiWrSettings, NULL, 0, &readBuffer[0], sizeof(readBuffer));
 
-        // no matter the result, send the command to Stop Read Data Continuously mode
-        uint8_t workBuffer = 0b00010001;
+        // copy to the managed buffer:
+        // - dropping the status data
+        // - copying only channel 1 data
+        memcpy(emgData.Buffer, &readBuffer[CHANNEL_1_DATA_OFFSET], BYTES_PER_READING);
 
-        nanoSPI_Write_Read(spiDeviceHandle, spiWrSettings, (uint8_t *)&workBuffer, 1, NULL, 0);
+        // decrement the number of readings to complete
+        emgData.ReadingsToComplete--;
 
-        // de-assert CS
-        CPU_GPIO_SetPinState(csPin, GpioPinValue_High);
+        // move pointer to next position
+        emgData.Buffer += BYTES_PER_READING;
 
-        // signal the event
+        // check if all readings have been completed
+        if (emgData.ReadingsToComplete == 0)
+        {
+            // all readings have been completed
 
-        /////////////////////////////////////////////
-        // HIJACKING the FLAG_RADIO for this event //
-        /////////////////////////////////////////////
-        Events_Set(SYSTEM_EVENT_FLAG_RADIO);
+            // no matter the result, send the command to Stop Read Data Continuously mode
+            uint8_t workBuffer = 0b00010001;
+
+            nanoSPI_Write_Read(spiDeviceHandle, spiWrSettings, (uint8_t *)&workBuffer, 1, NULL, 0);
+
+            // de-assert CS
+            CPU_GPIO_SetPinState(csPin, GpioPinValue_High);
+
+            // signal the event
+
+            /////////////////////////////////////////////
+            // HIJACKING the FLAG_RADIO for this event //
+            /////////////////////////////////////////////
+            Events_Set(SYSTEM_EVENT_FLAG_RADIO);
+
+            // decrease the number of readings to complete to signal that the operation is complete
+            emgData.ReadingsToComplete--;
+        }
     }
 }
 
@@ -117,7 +124,7 @@ HRESULT Library_gatescientific_ads1299_GateScientific_Ads1299_Ads1299::NativeDeI
 }
 
 HRESULT Library_gatescientific_ads1299_GateScientific_Ads1299_Ads1299::
-    NativeRecordEmg___VOID__SZARRAY_U1__SystemTimeSpan(CLR_RT_StackFrame &stack)
+    NativeRecordEmg___VOID__SZARRAY_U1__I4__SystemTimeSpan(CLR_RT_StackFrame &stack)
 {
     NANOCLR_HEADER();
 
@@ -141,16 +148,13 @@ HRESULT Library_gatescientific_ads1299_GateScientific_Ads1299_Ads1299::
     buffer = stack.Arg1().DereferenceArray();
 
     // setup timeout
-    NANOCLR_CHECK_HRESULT(stack.SetupTimeoutFromTimeSpan(stack.Arg2(), timeoutTicks));
-
-    // add an extra 20s to the timeout, to allow for the EMG data to be read
-    *timeoutTicks += 20000000;
+    NANOCLR_CHECK_HRESULT(stack.SetupTimeoutFromTimeSpan(stack.Arg3(), timeoutTicks));
 
     if (stack.m_customState == 1)
     {
         // fill in the EMG data structure
         emgData.Buffer = buffer->GetFirstElement();
-        emgData.ReadingsToComplete = buffer->m_numOfElements;
+        emgData.ReadingsToComplete = stack.Arg2().NumericByRef().s4;
 
         // send Read Data Continuous command
         // RDATAC
@@ -168,7 +172,7 @@ HRESULT Library_gatescientific_ads1299_GateScientific_Ads1299_Ads1299::
     while (eventResult)
     {
         // non-blocking wait allowing other threads to run while we wait for the read operation to complete
-        
+
         /////////////////////////////////////////////
         // HIJACKING the FLAG_RADIO for this event //
         /////////////////////////////////////////////
