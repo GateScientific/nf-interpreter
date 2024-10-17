@@ -30,7 +30,6 @@ typedef enum __nfpack Register
 typedef struct
 {
     uint8_t *Buffer;
-    int32_t BufferSize;
     int32_t ReadingsToComplete;
 } NF_GS_EMGDATA;
 

@@ -36,29 +36,22 @@ void DataReadyHandler(GPIO_PIN pinNumber, bool pinState, void *pArg)
     // check if we're still waiting for data or if the operation is complete
     if (emgData.ReadingsToComplete > 0)
     {
-        // Decrement the buffer size
-        emgData.BufferSize -= BYTES_PER_READING;
+        // read the data
+        //nanoSPI_Write_Read(spiDeviceHandle, spiWrSettings, NULL, 0, &readBuffer[0], sizeof(readBuffer));
 
-        // Check to see if we have room in the buffer
-        if (emgData.BufferSize >= 0)
-        {
-            // read the data
-            nanoSPI_Write_Read(spiDeviceHandle, spiWrSettings, NULL, 0, &readBuffer[0], sizeof(readBuffer));
+        // copy to the managed buffer:
+        // - dropping the status data
+        // - copying only channel 1 data
+        memcpy(emgData.Buffer, &readBuffer[CHANNEL_1_DATA_OFFSET], BYTES_PER_READING);
 
-            // copy to the managed buffer:
-            // - dropping the status data
-            // - copying only channel 1 data
-            memcpy(emgData.Buffer, &readBuffer[CHANNEL_1_DATA_OFFSET], BYTES_PER_READING);
+        // decrement the number of readings to complete
+        emgData.ReadingsToComplete--;
 
-            // decrement the number of readings to complete
-            emgData.ReadingsToComplete--;
-
-            // move pointer to next position
-            emgData.Buffer += BYTES_PER_READING;
-        }
+        // move pointer to next position
+        emgData.Buffer += BYTES_PER_READING;
 
         // check if all readings have been completed
-        if (emgData.ReadingsToComplete == 0 || emgData.BufferSize <= 0)
+        if (emgData.ReadingsToComplete == 0)
         {
             // all readings have been completed
 
@@ -161,7 +154,6 @@ HRESULT Library_gatescientific_ads1299_GateScientific_Ads1299_Ads1299::
     {
         // fill in the EMG data structure
         emgData.Buffer = buffer->GetFirstElement();
-        emgData.BufferSize = buffer->m_numOfElements;
         emgData.ReadingsToComplete = stack.Arg2().NumericByRef().s4;
 
         // send Read Data Continuous command
