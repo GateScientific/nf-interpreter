@@ -58,7 +58,7 @@ void DataReadyHandler(GPIO_PIN pinNumber, bool pinState, void *pArg)
         }
 
         // check if all readings have been completed
-        if (emgData.ReadingsToComplete == 0)
+        if (emgData.ReadingsToComplete == 0 || emgData.BufferSize <= 0)
         {
             // all readings have been completed
 
