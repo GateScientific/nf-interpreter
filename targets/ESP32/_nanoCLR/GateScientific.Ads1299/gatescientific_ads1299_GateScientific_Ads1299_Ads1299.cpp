@@ -10,8 +10,6 @@
 typedef Library_sys_dev_spi_native_System_Device_Spi_SpiConnectionSettings SpiConnectionSettings;
 typedef Library_sys_dev_spi_native_System_Device_Spi_SpiDevice SpiDevice;
 
-static TaskHandle_t workerTask;
-
 static int32_t spiDeviceHandle;
 static GPIO_PIN csPin;
 static GPIO_PIN dataReadyPin;
@@ -24,8 +22,6 @@ static SPI_WRITE_READ_SETTINGS spiWrSettings = {
     .DeviceChipSelect = -1,
     .ChipSelectActiveState = false};
 
-const UBaseType_t xNotificationIndex = 1;
-
 // buffer to hold:
 // - 3 bytes for the status data
 // - 3 bytes for each channel data
@@ -37,53 +33,41 @@ void DataReadyHandler(GPIO_PIN pinNumber, bool pinState, void *pArg)
     (void)pinNumber;
     (void)pinState;
 
-    BaseType_t higherPriorityTaskWoken = pdFALSE;
-
-    // Notify the  worker task about DRYD
-    vTaskNotifyGiveIndexedFromISR(workerTask, xNotificationIndex, &higherPriorityTaskWoken);
-
-    portYIELD_FROM_ISR(higherPriorityTaskWoken);
-}
-
-void AdcReaderWorkerTask(void *pvParameters)
-{
-    NF_GS_EMGDATA *emgDataControl = (NF_GS_EMGDATA *)pvParameters;
-
-    while (emgDataControl->ReadingsToComplete > 0)
-    {
-        // wait forever for the DRDY semaphore
-        ulTaskNotifyTakeIndexed(xNotificationIndex, pdTRUE, portMAX_DELAY);
-        
+    if(emgData.ReadingsToComplete > 0)
+    { 
         // read the data
         nanoSPI_Write_Read(spiDeviceHandle, spiWrSettings, NULL, 0, &readBuffer[0], sizeof(readBuffer));
 
         // copy to the managed buffer:
         // - dropping the status data
         // - copying only channel 1 data
-        memcpy(emgDataControl->Buffer, &readBuffer[CHANNEL_1_DATA_OFFSET], BYTES_PER_READING);
+        memcpy(emgData.Buffer, &readBuffer[CHANNEL_1_DATA_OFFSET], BYTES_PER_READING);
 
         // decrement the number of readings to complete
-        emgDataControl->ReadingsToComplete--;
+        emgData.ReadingsToComplete--;
 
         // move pointer to next position
-        emgDataControl->Buffer += BYTES_PER_READING;
+        emgData.Buffer += BYTES_PER_READING;
+
+        // check if all readings have been completed
+        if (emgData.ReadingsToComplete == 0)
+        {
+            // all readings have been completed
+
+            // no matter the result, send the command to Stop Read Data Continuously mode
+            uint8_t workBuffer = 0b00010001;
+
+            nanoSPI_Write_Read(spiDeviceHandle, spiWrSettings, (uint8_t *)&workBuffer, 1, NULL, 0);
+
+            // de-assert CS
+            CPU_GPIO_SetPinState(csPin, GpioPinValue_High);
+
+            /////////////////////////////////////////////
+            // HIJACKING the FLAG_RADIO for this event //
+            /////////////////////////////////////////////
+            Events_Set(SYSTEM_EVENT_FLAG_RADIO);
+        }
     }
-
-    // send the command to Stop Read Data Continuously mode
-    uint8_t workBuffer = 0b00010001;
-
-    nanoSPI_Write_Read(spiDeviceHandle, spiWrSettings, (uint8_t *)&workBuffer, 1, NULL, 0);
-
-    // de-assert CS
-    CPU_GPIO_SetPinState(csPin, GpioPinValue_High);
-
-    /////////////////////////////////////////////
-    // HIJACKING the FLAG_RADIO for this event //
-    /////////////////////////////////////////////
-    Events_Set(SYSTEM_EVENT_FLAG_RADIO);
-
-    // delete task
-    vTaskDelete(NULL);
 }
 
 HRESULT Library_gatescientific_ads1299_GateScientific_Ads1299_Ads1299::NativeInit___VOID(CLR_RT_StackFrame &stack)
@@ -175,12 +159,6 @@ HRESULT Library_gatescientific_ads1299_GateScientific_Ads1299_Ads1299::
         // fill in the EMG data structure
         emgData.Buffer = buffer->GetFirstElement();
         emgData.ReadingsToComplete = stack.Arg2().NumericByRef().s4;
-
-        // create worker thread to read the data
-        if (xTaskCreate(AdcReaderWorkerTask, "ADCWT", 2048, &emgData, 12, &workerTask) != pdPASS)
-        {
-            NANOCLR_SET_AND_LEAVE(CLR_E_FAIL);
-        }
 
         // send Read Data Continuous command
         // RDATAC
