@@ -11,6 +11,7 @@
 typedef Library_sys_dev_spi_native_System_Device_Spi_SpiConnectionSettings SpiConnectionSettings;
 typedef Library_sys_dev_spi_native_System_Device_Spi_SpiDevice SpiDevice;
 
+static int32_t deviceHandle;
 static int32_t spiDeviceHandle;
 static GPIO_PIN csPin;
 static GPIO_PIN dataReadyPin;
@@ -37,8 +38,22 @@ void DataReadyHandler(void *arg)
     if (emgData.ReadingsToComplete > 0)
     {
         // read the data
-        nanoSPI_Write_Read(spiDeviceHandle, spiWrSettings, NULL, 0, &readBuffer[0], sizeof(readBuffer));
-//CLR_Debug::Printf("Reading %d.\r\n", emgData.ReadingsToComplete);
+
+        // Set up SPI Transaction
+        spi_transaction_t pTrans;
+
+        // use full duplex unless no read data or bus configuration is half duplex
+        pTrans.flags = 0;
+        pTrans.cmd = 0;
+        pTrans.addr = 0;
+        pTrans.length = READ_BUFFER_SIZE;
+        pTrans.rxlength = 0;
+        pTrans.user = NULL;
+        pTrans.tx_buffer = NULL;
+        pTrans.rx_buffer = &readBuffer[0];
+
+        spi_device_polling_transmit((spi_device_handle_t)spiDeviceHandle, &pTrans);
+
         // copy to the managed buffer:
         // - dropping the status data
         // - copying only channel 1 data
@@ -59,7 +74,11 @@ void DataReadyHandler(void *arg)
             // no matter the result, send the command to Stop Read Data Continuously mode
             uint8_t workBuffer = 0b00010001;
 
-            nanoSPI_Write_Read(spiDeviceHandle, spiWrSettings, (uint8_t *)&workBuffer, 1, NULL, 0);
+            // reuse the SPI transaction
+            pTrans.tx_buffer = &workBuffer;
+            pTrans.length = 1;
+
+            spi_device_polling_transmit((spi_device_handle_t)spiDeviceHandle, &pTrans);
 
             // de-assert CS
             CPU_GPIO_SetPinState(csPin, GpioPinValue_High);
@@ -126,7 +145,8 @@ HRESULT Library_gatescientific_ads1299_GateScientific_Ads1299_Ads1299::NativeIni
     spiDevice = pThis[FIELD___spiDevice].Dereference();
 
     // get the SPI device handle
-    spiDeviceHandle = spiDevice[SpiDevice::FIELD___deviceId].NumericByRef().s4;
+    deviceHandle = spiDevice[SpiDevice::FIELD___deviceId].NumericByRef().s4;
+    spiDeviceHandle = CPU_SPI_GetSpiHandle(deviceHandle);
 
     // get the CS pin number
     csPin = (GPIO_PIN)pThis[FIELD__SpiCsPinNumber].NumericByRef().s4;
@@ -212,7 +232,7 @@ HRESULT Library_gatescientific_ads1299_GateScientific_Ads1299_Ads1299::
         // assert CS
         CPU_GPIO_SetPinState(csPin, GpioPinValue_Low);
 
-        nanoSPI_Write_Read(spiDeviceHandle, spiWrSettings, (uint8_t *)&workBuffer, 1, NULL, 0);
+        nanoSPI_Write_Read(deviceHandle, spiWrSettings, (uint8_t *)&workBuffer, 1, NULL, 0);
 
         // bump custom state
         stack.m_customState = 2;
