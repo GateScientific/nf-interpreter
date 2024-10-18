@@ -227,7 +227,7 @@ HRESULT Library_gatescientific_ads1299_GateScientific_Ads1299_Ads1299::
 
         // fill in the EMG data structure
         emgData.Buffer = buffer->GetFirstElement();
-        emgData.ReadingsToComplete = 10; //stack.Arg2().NumericByRef().s4;
+        emgData.ReadingsToComplete = stack.Arg2().NumericByRef().s4;
 
         // send Read Data Continuous command
         // RDATAC
