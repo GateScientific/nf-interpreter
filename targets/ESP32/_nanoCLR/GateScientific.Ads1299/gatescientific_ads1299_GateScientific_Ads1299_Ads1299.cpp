@@ -28,11 +28,9 @@ static SPI_WRITE_READ_SETTINGS spiWrSettings = {
 // - 3 bytes for each channel data
 static uint8_t readBuffer[READ_BUFFER_SIZE];
 
-void DataReadyHandler(GPIO_PIN pinNumber, bool pinState, void *pArg)
+void DataReadyHandler(void *arg)
 {
-    (void)pArg;
-    (void)pinNumber;
-    (void)pinState;
+    (void)arg;
 
     NATIVE_INTERRUPT_START
 
@@ -78,6 +76,42 @@ void DataReadyHandler(GPIO_PIN pinNumber, bool pinState, void *pArg)
     NATIVE_INTERRUPT_END
 }
 
+static HRESULT SetupDrdyPin()
+{
+    NANOCLR_HEADER();
+
+    esp_err_t ret;
+
+    if (!CPU_GPIO_ReservePin(dataReadyPin, true))
+    {
+        NANOCLR_SET_AND_LEAVE(CLR_E_INVALID_PARAMETER);
+    }
+
+    gpio_config_t GPIOConfig;
+
+    GPIOConfig.pin_bit_mask = (1ULL << dataReadyPin);
+    GPIOConfig.mode = GPIO_MODE_INPUT;
+    GPIOConfig.pull_up_en = GPIO_PULLUP_DISABLE;
+    GPIOConfig.pull_down_en = GPIO_PULLDOWN_DISABLE;
+    GPIOConfig.intr_type = GPIO_INTR_LOW_LEVEL;
+
+    gpio_config(&GPIOConfig);
+
+    ret = gpio_isr_handler_add((gpio_num_t)dataReadyPin, DataReadyHandler, NULL);
+    if (ret != ESP_OK)
+    {
+        NANOCLR_SET_AND_LEAVE(CLR_E_INVALID_PARAMETER);
+    }
+
+    ret = gpio_set_intr_type((gpio_num_t)dataReadyPin, GPIO_INTR_LOW_LEVEL);
+    if (ret != ESP_OK)
+    {
+        NANOCLR_SET_AND_LEAVE(CLR_E_INVALID_PARAMETER);
+    }
+
+    NANOCLR_NOCLEANUP();
+}
+
 HRESULT Library_gatescientific_ads1299_GateScientific_Ads1299_Ads1299::NativeInit___VOID(CLR_RT_StackFrame &stack)
 {
     NANOCLR_HEADER();
@@ -101,12 +135,7 @@ HRESULT Library_gatescientific_ads1299_GateScientific_Ads1299_Ads1299::NativeIni
     dataReadyPin = (GPIO_PIN)pThis[FIELD__DataReadyPinNumber].NumericByRef().s4;
 
     // setup the DRDY pin
-    if (!CPU_GPIO_ReservePin(dataReadyPin, true))
-    {
-        NANOCLR_SET_AND_LEAVE(CLR_E_INVALID_PARAMETER);
-    }
-
-    CPU_GPIO_EnableInputPin(dataReadyPin, 0, DataReadyHandler, NULL, GPIO_INT_LEVEL_LOW, PinMode_Input);
+    NANOCLR_CHECK_HRESULT(SetupDrdyPin());
 
     NANOCLR_NOCLEANUP();
 }
@@ -119,8 +148,11 @@ HRESULT Library_gatescientific_ads1299_GateScientific_Ads1299_Ads1299::NativeDeI
     CLR_RT_HeapBlock *pThis = stack.This();
     FAULT_ON_NULL(pThis);
 
+    // remove callback
+    gpio_isr_handler_remove((gpio_num_t)dataReadyPin);
+
     // release the DRDY pin
-    CPU_GPIO_DisablePin(dataReadyPin, PinMode_Input, 0);
+    CPU_GPIO_ReservePin(dataReadyPin, false);
 
     NANOCLR_NOCLEANUP();
 }
