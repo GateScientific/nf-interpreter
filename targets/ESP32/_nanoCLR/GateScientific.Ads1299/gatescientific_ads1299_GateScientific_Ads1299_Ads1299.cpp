@@ -46,7 +46,8 @@ void DataReadyHandler(void *arg)
         pTrans.flags = 0;
         pTrans.cmd = 0;
         pTrans.addr = 0;
-        pTrans.length = READ_BUFFER_SIZE;
+        // !! length is total bits!!
+        pTrans.length = READ_BUFFER_SIZE * 8;
         pTrans.rxlength = 0;
         pTrans.user = NULL;
         pTrans.tx_buffer = NULL;
