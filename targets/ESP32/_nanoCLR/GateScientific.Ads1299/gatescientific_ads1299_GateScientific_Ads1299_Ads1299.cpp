@@ -6,6 +6,7 @@
 #define STATUS_BYTES_COUNT    3
 #define CHANNEL_1_DATA_OFFSET 3
 #define NUMBER_OF_CHANNELS    4
+#define READ_BUFFER_SIZE      (STATUS_BYTES_COUNT + NUMBER_OF_CHANNELS * BYTES_PER_READING)
 
 typedef Library_sys_dev_spi_native_System_Device_Spi_SpiConnectionSettings SpiConnectionSettings;
 typedef Library_sys_dev_spi_native_System_Device_Spi_SpiDevice SpiDevice;
@@ -25,7 +26,7 @@ static SPI_WRITE_READ_SETTINGS spiWrSettings = {
 // buffer to hold:
 // - 3 bytes for the status data
 // - 3 bytes for each channel data
-static uint8_t readBuffer[STATUS_BYTES_COUNT + NUMBER_OF_CHANNELS * BYTES_PER_READING];
+static uint8_t readBuffer[READ_BUFFER_SIZE];
 
 void DataReadyHandler(GPIO_PIN pinNumber, bool pinState, void *pArg)
 {
