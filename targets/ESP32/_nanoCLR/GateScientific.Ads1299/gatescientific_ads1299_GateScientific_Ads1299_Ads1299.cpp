@@ -83,6 +83,9 @@ void DataReadyHandler(void *arg)
             // de-assert CS
             CPU_GPIO_SetPinState(csPin, GpioPinValue_High);
 
+            // remove callback
+            gpio_isr_handler_remove((gpio_num_t)dataReadyPin);
+
             /////////////////////////////////////////////
             // HIJACKING the FLAG_RADIO for this event //
             /////////////////////////////////////////////
@@ -154,8 +157,8 @@ HRESULT Library_gatescientific_ads1299_GateScientific_Ads1299_Ads1299::NativeIni
     // get the DRDY pin
     dataReadyPin = (GPIO_PIN)pThis[FIELD__DataReadyPinNumber].NumericByRef().s4;
 
-    // setup the DRDY pin
-    NANOCLR_CHECK_HRESULT(SetupDrdyPin());
+    // reserve the DRDY pin
+    CPU_GPIO_ReservePin(dataReadyPin, false);
 
     NANOCLR_NOCLEANUP();
 }
@@ -167,9 +170,6 @@ HRESULT Library_gatescientific_ads1299_GateScientific_Ads1299_Ads1299::NativeDeI
     // get a pointer to the managed object instance and check that it's not NULL
     CLR_RT_HeapBlock *pThis = stack.This();
     FAULT_ON_NULL(pThis);
-
-    // remove callback
-    gpio_isr_handler_remove((gpio_num_t)dataReadyPin);
 
     // release the DRDY pin
     CPU_GPIO_ReservePin(dataReadyPin, false);
@@ -221,6 +221,9 @@ HRESULT Library_gatescientific_ads1299_GateScientific_Ads1299_Ads1299::
  //CLR_Debug::Printf("Here.\r\n");
     if (stack.m_customState == 1)
     {
+        // setup the DRDY pin
+        NANOCLR_CHECK_HRESULT(SetupDrdyPin());
+
         // fill in the EMG data structure
         emgData.Buffer = buffer->GetFirstElement();
         emgData.ReadingsToComplete = 10; //stack.Arg2().NumericByRef().s4;
