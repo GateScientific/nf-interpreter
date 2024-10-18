@@ -112,7 +112,7 @@ HRESULT Library_gatescientific_ads1299_GateScientific_Ads1299_Ads1299::NativeDeI
     FAULT_ON_NULL(pThis);
 
     // release the DRDY pin
-    CPU_GPIO_ReservePin(dataReadyPin, false);
+    CPU_GPIO_DisablePin(dataReadyPin, PinMode_Input, 0);
 
     NANOCLR_NOCLEANUP();
 }
