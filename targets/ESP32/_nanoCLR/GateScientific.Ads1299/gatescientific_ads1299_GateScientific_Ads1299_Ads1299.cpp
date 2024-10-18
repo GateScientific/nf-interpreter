@@ -38,7 +38,6 @@ void DataReadyHandler(void *arg)
     if (emgData.ReadingsToComplete > 0)
     {
         // read the data
-
         // Set up SPI Transaction
         spi_transaction_t pTrans;
 
@@ -70,7 +69,6 @@ void DataReadyHandler(void *arg)
         if (emgData.ReadingsToComplete == 0)
         {
             // all readings have been completed
-            //CLR_Debug::Printf("Set event.\r\n");
 
             // no matter the result, send the command to Stop Read Data Continuously mode
             uint8_t workBuffer = 0b00010001;
@@ -93,8 +91,6 @@ void DataReadyHandler(void *arg)
             Events_Set(SYSTEM_EVENT_FLAG_RADIO);
         }
     }
-
-     //CLR_Debug::Printf("ISR.\r\n");
 
     NATIVE_INTERRUPT_END
 }
@@ -219,7 +215,6 @@ HRESULT Library_gatescientific_ads1299_GateScientific_Ads1299_Ads1299::
 
     // // if m_customState == 0 then push timeout on to eval stack[0] then move to m_customState = 1
     //NANOCLR_CHECK_HRESULT(stack.SetupTimeoutFromTicks(hbTimeout, timeoutTicks));
- //CLR_Debug::Printf("Here.\r\n");
     if (stack.m_customState == 1)
     {
         // setup the DRDY pin
@@ -255,7 +250,6 @@ HRESULT Library_gatescientific_ads1299_GateScientific_Ads1299_Ads1299::
         if (eventResult)
         {
             // done here
-             //CLR_Debug::Printf("DONE.\r\n");
             break;
         }
         else
