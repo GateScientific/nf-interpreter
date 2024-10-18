@@ -33,11 +33,13 @@ void DataReadyHandler(GPIO_PIN pinNumber, bool pinState, void *pArg)
     (void)pinNumber;
     (void)pinState;
 
-    if(emgData.ReadingsToComplete > 0)
-    { 
+    NATIVE_INTERRUPT_START
+
+    if (emgData.ReadingsToComplete > 0)
+    {
         // read the data
         nanoSPI_Write_Read(spiDeviceHandle, spiWrSettings, NULL, 0, &readBuffer[0], sizeof(readBuffer));
-
+//CLR_Debug::Printf("Reading %d.\r\n", emgData.ReadingsToComplete);
         // copy to the managed buffer:
         // - dropping the status data
         // - copying only channel 1 data
@@ -53,6 +55,7 @@ void DataReadyHandler(GPIO_PIN pinNumber, bool pinState, void *pArg)
         if (emgData.ReadingsToComplete == 0)
         {
             // all readings have been completed
+            //CLR_Debug::Printf("Set event.\r\n");
 
             // no matter the result, send the command to Stop Read Data Continuously mode
             uint8_t workBuffer = 0b00010001;
@@ -68,6 +71,10 @@ void DataReadyHandler(GPIO_PIN pinNumber, bool pinState, void *pArg)
             Events_Set(SYSTEM_EVENT_FLAG_RADIO);
         }
     }
+
+     //CLR_Debug::Printf("ISR.\r\n");
+
+    NATIVE_INTERRUPT_END
 }
 
 HRESULT Library_gatescientific_ads1299_GateScientific_Ads1299_Ads1299::NativeInit___VOID(CLR_RT_StackFrame &stack)
@@ -126,8 +133,9 @@ HRESULT Library_gatescientific_ads1299_GateScientific_Ads1299_Ads1299::
     int64_t *timeoutTicks;
     bool eventResult = true;
 
-    CLR_RT_HeapBlock_Array *buffer;
-    CLR_RT_HeapBlock hbTimeout;
+    CLR_RT_HeapBlock_Array *buffer = NULL;
+    // CLR_RT_HeapBlock hbTimeout;
+    // CLR_RT_HeapBlock *timeoutHB;
 
     // get a pointer to the managed object instance and check that it's not NULL
     CLR_RT_HeapBlock *pThis = stack.This();
@@ -142,23 +150,27 @@ HRESULT Library_gatescientific_ads1299_GateScientific_Ads1299_Ads1299::
     // get the buffer
     buffer = stack.Arg1().DereferenceArray();
 
+    // pin it, so GC doesn't move it because we're using it directly
+    buffer->Pin();
+
     // setup timeout
-    // NANOCLR_CHECK_HRESULT(stack.SetupTimeoutFromTimeSpan(stack.Arg3(), timeoutTicks));
+    NANOCLR_CHECK_HRESULT(stack.SetupTimeoutFromTimeSpan(stack.Arg3(), timeoutTicks));
 
     // // add an extra 20s to the timeout, to allow for the EMG data to be read
     // *timeoutTicks += 20000000;
 
-    // this is longer than the thread time quantum
-    hbTimeout.SetInteger((CLR_INT64)-1);
+    // // this is longer than the thread time quantum
+    //hbTimeout.SetInteger((CLR_INT64)-1);
+    // // timeoutHB = &(stack.Arg4());
 
-    // if m_customState == 0 then push timeout on to eval stack[0] then move to m_customState = 1
-    NANOCLR_CHECK_HRESULT(stack.SetupTimeoutFromTicks(hbTimeout, timeoutTicks));
-
+    // // if m_customState == 0 then push timeout on to eval stack[0] then move to m_customState = 1
+    //NANOCLR_CHECK_HRESULT(stack.SetupTimeoutFromTicks(hbTimeout, timeoutTicks));
+ //CLR_Debug::Printf("Here.\r\n");
     if (stack.m_customState == 1)
     {
         // fill in the EMG data structure
         emgData.Buffer = buffer->GetFirstElement();
-        emgData.ReadingsToComplete = stack.Arg2().NumericByRef().s4;
+        emgData.ReadingsToComplete = 10; //stack.Arg2().NumericByRef().s4;
 
         // send Read Data Continuous command
         // RDATAC
@@ -186,18 +198,32 @@ HRESULT Library_gatescientific_ads1299_GateScientific_Ads1299_Ads1299::
         if (eventResult)
         {
             // done here
+             //CLR_Debug::Printf("DONE.\r\n");
             break;
         }
         else
         {
             // timeout has expired
             // return exception
-            NANOCLR_SET_AND_LEAVE(CLR_E_TIMEOUT);
+
+            //////////////////////////////////
+            //NANOCLR_SET_AND_LEAVE(CLR_E_TIMEOUT);
+            ///////////////////////////////
+            break;
         }
     }
 
     // pop timeout heap block from stack
     stack.PopValue();
 
-    NANOCLR_NOCLEANUP();
+    NANOCLR_CLEANUP();
+
+    // we need to clean up if this is not rescheduled
+    if (hr != CLR_E_THREAD_WAITING)
+    {
+        // unpin the buffer
+        buffer->Unpin();
+    }
+
+    NANOCLR_CLEANUP_END();
 }
