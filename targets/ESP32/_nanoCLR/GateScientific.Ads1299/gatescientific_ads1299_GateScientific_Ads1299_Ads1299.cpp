@@ -256,10 +256,7 @@ HRESULT Library_gatescientific_ads1299_GateScientific_Ads1299_Ads1299::
         {
             // timeout has expired
             // return exception
-
-            //////////////////////////////////
-            //NANOCLR_SET_AND_LEAVE(CLR_E_TIMEOUT);
-            ///////////////////////////////
+            NANOCLR_SET_AND_LEAVE(CLR_E_TIMEOUT);
             break;
         }
     }
