@@ -184,8 +184,6 @@ HRESULT Library_gatescientific_ads1299_GateScientific_Ads1299_Ads1299::
     bool eventResult = true;
 
     CLR_RT_HeapBlock_Array *buffer = NULL;
-    // CLR_RT_HeapBlock hbTimeout;
-    // CLR_RT_HeapBlock *timeoutHB;
 
     // get a pointer to the managed object instance and check that it's not NULL
     CLR_RT_HeapBlock *pThis = stack.This();
@@ -206,15 +204,6 @@ HRESULT Library_gatescientific_ads1299_GateScientific_Ads1299_Ads1299::
     // setup timeout
     NANOCLR_CHECK_HRESULT(stack.SetupTimeoutFromTimeSpan(stack.Arg3(), timeoutTicks));
 
-    // // add an extra 20s to the timeout, to allow for the EMG data to be read
-    // *timeoutTicks += 20000000;
-
-    // // this is longer than the thread time quantum
-    //hbTimeout.SetInteger((CLR_INT64)-1);
-    // // timeoutHB = &(stack.Arg4());
-
-    // // if m_customState == 0 then push timeout on to eval stack[0] then move to m_customState = 1
-    //NANOCLR_CHECK_HRESULT(stack.SetupTimeoutFromTicks(hbTimeout, timeoutTicks));
     if (stack.m_customState == 1)
     {
         // setup the DRDY pin
